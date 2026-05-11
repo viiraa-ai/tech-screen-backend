@@ -7,3 +7,6 @@ dist
 .vscode
 .idea
 coverage
+
+# Local Claude Code settings — candidates can author their own.
+.claude/

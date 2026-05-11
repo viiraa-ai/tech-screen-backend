@@ -18,7 +18,6 @@ INSERT INTO conversation_participants (conversation_id, user_id) VALUES
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222');
 
 -- 200 messages in conversation A. Single INSERT so now() is constant across rows.
--- Messages #100 and #101 share a created_at — surfaces unstable ORDER BY for careful candidates.
 INSERT INTO messages (conversation_id, sender_id, body, created_at)
 SELECT
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
