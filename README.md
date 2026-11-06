@@ -71,8 +71,8 @@ Seed IDs:
 | User Alice  | `11111111-1111-1111-1111-111111111111` |
 | User Bob    | `22222222-2222-2222-2222-222222222222` |
 | User Carol  | `33333333-3333-3333-3333-333333333333` |
-| Conversation A (200 messages) | `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` |
-| Conversation B (20 messages)  | `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` |
+| Conversation A (200 messages; Alice, Bob, Carol) | `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` |
+| Conversation B (20 messages; Alice, Bob)         | `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` |
 
 ---
 
@@ -92,13 +92,21 @@ Seed IDs:
 
    _(Mobile also flagged that the endpoint returns a generic "something went wrong" for anything unusual — bad conversation IDs, missing conversations, negative page numbers. They'd like proper status codes they can branch on. That's covered by item 2 below.)_
 2. **Validation and error semantics** — distinguish 400 / 404 / 500 cleanly. Cap page size sensibly.
-3. **Structured logging** with request IDs (e.g., pino + a request-id middleware). Replace the `console.log` sprinkle.
-4. **Integration tests** covering at minimum: first/middle/last page, empty conversation, malformed pagination input, malformed conversation ID (400), non-existent conversation ID (404).
-5. **Schema review** — add the index(es) the query needs.
-6. **`NOTES.md`** — design reasoning that doesn't fit in the PR description (see Submission below). What you considered and rejected, what you'd do with more time, anything weird you spotted.
+3. **[CHAT-231] Only participants should be able to read a conversation.** Right now anyone can read any conversation's messages. These are coaching conversations about members' health, so that's not acceptable.
+   - Every request identifies the caller with an `X-User-Id` header (a user UUID). Assume an upstream gateway has already authenticated it.
+   - A caller who is not a participant of the conversation must get the same response as a non-existent conversation (404). Don't leak that it exists.
+   - Enforce this in the database with Postgres row-level security, not only in Express. Assume other services will query these tables directly.
+   - Missing or malformed `X-User-Id` → 401 or 400 (your call; note it in `NOTES.md`).
+4. **Safe schema change.** Product wants to tag each message with a `kind` (`member`, `coach`, `system`) so the app can style coach notes differently. In production, `messages` has ~50M rows and receives writes 24/7.
+   - Write the migration(s) as the next numbered files in `db/migrations/` (`002_*.sql`, `003_*.sql`, etc.).
+   - In `NOTES.md`, describe the rollout: step order, how you backfill, what you'd monitor, how you'd roll back, and what you'd avoid doing on a table this size.
+5. **Integration tests** covering at minimum: first/middle/last page, empty conversation, malformed pagination input, malformed conversation ID (400), non-existent conversation ID (404), a participant can read, a non-participant gets 404, missing caller identity is rejected.
+6. **Schema review** — add the index(es) the query needs.
+7. **`NOTES.md`** — design reasoning that doesn't fit in the PR description (see Submission below). What you considered and rejected, what you'd do with more time, anything weird you spotted.
 
 ### Optional — pick what's interesting to you
 
+- Structured logging with request IDs (e.g., pino + a request-id middleware) to replace the `console.log` sprinkle
 - Backward / bidirectional pagination
 - Rate limiting on the endpoint
 - Prometheus metrics or OpenTelemetry tracing on DB calls
@@ -110,7 +118,7 @@ Seed IDs:
 
 ## Ground rules
 
-- AI tools (Copilot, Claude, Cursor, etc.) are encouraged — same as on the job. We care about the result and your judgment.
+- AI tools (Copilot, Claude, Cursor, etc.) are encouraged — same as on the job. We care about the result and your judgment. In `NOTES.md`, tell us how you used them: what you generated, what you reviewed closely, and what you rewrote or threw away.
 - Commit as you go. We'll read your git history.
 - If something is ambiguous, make a call and note it in `NOTES.md`. Don't block on us.
 - If you hit a setup issue you can't get past in ~30 minutes, email us.
