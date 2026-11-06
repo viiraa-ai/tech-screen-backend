@@ -124,8 +124,6 @@ Seed IDs:
 3. PR description should include: **Summary** (what changes), **Why** (what problem this solves), and **Test plan** (concrete checks a reviewer can run). Keep it high-level — the diff shows _what_; the description's job is _why_ and _how to verify_.
 4. Make sure `NOTES.md` is on the branch and pushed.
 5. Grant **read access** to:
-   - `yun.wu@viiraa.com`
-   - `aiden.fang@viiraa.com`
    - `lei.zhao@viiraa.com`
 6. Reply to our email with the repo URL.
 
